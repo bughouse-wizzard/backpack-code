@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.backpack.claude-rc</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__CLAUDE_BIN__</string>
+        <string>rc</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__WORKDIR__</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- Умер по любой причине - подняли заново. Ради этого всё и затевалось. -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Не чаще раза в 30 секунд: если процесс падает сразу при старте,
+         бесконечный цикл перезапусков сожрал бы батарею быстрее, чем всё
+         остальное вместе взятое. -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/claude-rc.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/claude-rc.log</string>
+
+    <!-- launchd даёт процессам 256 дескрипторов, интерактивный shell - миллион.
+         claude rc в 256 не помещается и падает с "low max file descriptors";
+         KeepAlive его поднимал, и поломка выглядела как здоровое самолечение.
+         Проверено 2026-09-02: 11 одинаковых падений за ночь. -->
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

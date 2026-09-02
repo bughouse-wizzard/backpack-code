@@ -1,0 +1,20 @@
+# Настройки ВСЕХ оповещений этой оснастки, а не только о заряде: отсюда их
+# читают и sleep-toggle, и backpack-mode, и backpack-health. Имя файла
+# историческое. Удалишь - замолчат и они тоже.
+# Файл приватный: имя топика это и есть весь секрет.
+# Бэкенд: ntfy | telegram
+BACKEND=ntfy
+
+# --- ntfy.sh ---
+# Кто знает NTFY_TOPIC, тот читает и пишет в него. Не публикуй его.
+NTFY_SERVER=https://ntfy.sh
+NTFY_TOPIC=<сгенерировать: batt-$(tr -dc a-z0-9 </dev/urandom | head -c 24)>
+
+# --- telegram (если переключишь BACKEND=telegram) ---
+TG_TOKEN=
+TG_CHAT_ID=
+
+# Пороги разряда в процентах, по убыванию
+THRESHOLDS="90 80 70 60 50 40 30 20 10 5"
+
+# Как часто проверять - задаётся в launchd-плисте (StartInterval), здесь справочно
