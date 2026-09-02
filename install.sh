@@ -12,9 +12,9 @@ for arg in "$@"; do
     case "$arg" in
         --with-night-log) WITH_NIGHT_LOG=1 ;;
         -h|--help)
-            echo "Использование: ./install.sh [--with-night-log]"
+            echo "Usage: ./install.sh [--with-night-log]"
             exit 0 ;;
-        *) echo "неизвестный флаг: $arg" >&2; exit 1 ;;
+        *) echo "unknown flag: $arg" >&2; exit 1 ;;
     esac
 done
 
@@ -23,14 +23,14 @@ say() { printf "%s\n" "$1"; }
 # --- скрипты ---------------------------------------------------------------
 mkdir -p "$HOME/bin" "$HOME/.config" "$HOME/.local/state"
 install -m 0755 "$REPO"/bin/*.sh "$HOME/bin/"
-say "✅ скрипты в ~/bin"
+say "✅ scripts in ~/bin"
 
 # --- конфиги ---------------------------------------------------------------
 if [ ! -e "$HOME/.config/backpack-mode.conf" ]; then
     install -m 0644 "$REPO/config/backpack-mode.conf.example" "$HOME/.config/backpack-mode.conf"
-    say "✅ ~/.config/backpack-mode.conf - ВПИШИ ТУДА СВОЙ VPN-КЛИЕНТ в NEVER_FREEZE"
+    say "✅ ~/.config/backpack-mode.conf - PUT YOUR VPN CLIENT IN NEVER_FREEZE"
 else
-    say "•  ~/.config/backpack-mode.conf уже есть, не трогаю"
+    say "•  ~/.config/backpack-mode.conf already exists, leaving it alone"
 fi
 
 if [ ! -e "$HOME/.config/battery-watch.conf" ]; then
@@ -38,12 +38,12 @@ if [ ! -e "$HOME/.config/battery-watch.conf" ]; then
     sed "s|^NTFY_TOPIC=.*|NTFY_TOPIC=$topic|" \
         "$REPO/config/battery-watch.conf.example" > "$HOME/.config/battery-watch.conf"
     chmod 600 "$HOME/.config/battery-watch.conf"
-    say "✅ ~/.config/battery-watch.conf, топик ntfy сгенерирован: $topic"
-    say "   Подпишись на него в приложении ntfy (App Store / Google Play),"
-    say "   потом проверь: ~/bin/battery-watch.sh test"
-    say "   Кто знает топик - тот читает твои пуши и может слать свои."
+    say "✅ ~/.config/battery-watch.conf, generated ntfy topic: $topic"
+    say "   Subscribe to it in the ntfy app (App Store / Google Play),"
+    say "   then check it: ~/bin/battery-watch.sh test"
+    say "   Whoever knows the topic reads your pushes and can send their own."
 else
-    say "•  ~/.config/battery-watch.conf уже есть, не трогаю"
+    say "•  ~/.config/battery-watch.conf already exists, leaving it alone"
 fi
 
 # --- плисты ----------------------------------------------------------------
@@ -68,11 +68,11 @@ for a in $AGENTS; do
     render "$REPO/LaunchAgents/$label.plist.in" > "$plist"
     launchctl bootout "gui/$UID_NUM/$label" 2>/dev/null || true
     launchctl bootstrap "gui/$UID_NUM" "$plist"
-    say "✅ агент $label"
+    say "✅ agent $label"
 done
 
 if [ -z "$CLAUDE_BIN" ]; then
-    say "•  claude в PATH не найден - агент claude-rc пропущен"
+    say "•  claude not found in PATH - skipping the claude-rc agent"
 fi
 
 # --- sudoers ---------------------------------------------------------------
@@ -82,21 +82,21 @@ render "$REPO/config/pmset-disablesleep.sudoers.in" > "$SUDOERS_TMP"
 if sudo -n true 2>/dev/null || [ -t 0 ]; then
     if sudo visudo -cf "$SUDOERS_TMP" >/dev/null; then
         sudo install -m 0440 -o root -g wheel "$SUDOERS_TMP" /etc/sudoers.d/pmset-disablesleep
-        say "✅ правило sudoers для pmset disablesleep"
+        say "✅ sudoers rule for pmset disablesleep"
     else
-        say "⚠️  правило sudoers не прошло проверку visudo, пропущено"
+        say "⚠️  the sudoers rule failed the visudo check, skipped"
     fi
 else
-    say "•  нет tty для sudo - поставь правило вручную, см. README"
+    say "•  no tty for sudo - install the rule by hand, see README"
 fi
 rm -f "$SUDOERS_TMP"
 
 say ""
 "$HOME/bin/backpack-health.sh" || true
 say ""
-say "Осталось повесить хоткей вручную - Shortcuts, действие Run Shell Script,"
-say "shell /bin/bash, и абсолютный путь (именно абсолютный, \$HOME там пустой):"
+say "One manual step left - bind a hotkey: Shortcuts, Run Shell Script action,"
+say "shell /bin/bash, and an absolute path (absolute matters, \$HOME is empty there):"
 say ""
 say "    $HOME/bin/sleep-toggle.sh"
 say ""
-say "Пошагово: docs/ru/sleep-toggle.md или раздел Install в README.md"
+say "Step by step: docs/en/sleep-toggle.md or the Install section in README.md"

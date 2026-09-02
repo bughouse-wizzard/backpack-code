@@ -1,29 +1,30 @@
-# Режим рюкзака: что замораживать, когда крышка закрыта и сон запрещён.
+# Backpack mode: what to freeze while the lid is closed and sleep is disabled.
 #
-# Замораживание - это SIGSTOP: процесс останавливается намертво (ноль CPU),
-# память остаётся, при SIGCONT продолжает с того же места. Ничего не теряется.
+# Freezing means SIGSTOP: the process stops dead (zero CPU), its memory stays,
+# and SIGCONT resumes it exactly where it was. Nothing is killed or lost.
 
-# Приложения на заморозку. По одному в строке, ищутся по пути
-# /Applications/<имя>.app/ среди процессов текущего пользователя.
-# Здесь ЧЁРНЫЙ список, а не белый: перечисляем что глушить, а не что оставить.
-# Белый список однажды заморозил бы VPN, и с закрытой крышкой это не чинится.
+# Applications to freeze, one per line. Matched against processes of the
+# current user by the path /Applications/<name>.app/
+# This is a BLACKLIST, not a whitelist: name what to silence, not what to keep.
+# A whitelist would freeze your VPN sooner or later, and behind a closed lid
+# that cannot be undone.
 FREEZE_APPS="Telegram
 Google Chrome
 Slack
 Spotify"
 
-# Жёсткий запрет: даже если попадёт в список выше, трогать нельзя.
-# Совпадение по подстроке в полном пути процесса.
+# Hard exclusions: never touched, even if matched by the list above.
+# Matched as a substring of the process's full path.
 #
-# ВПИШИ СЮДА СВОЙ VPN-КЛИЕНТ И ВСЁ, ЧЕРЕЗ ЧТО ХОДИШЬ НА МАШИНУ.
-# Замороженный VPN за закрытой крышкой не чинится: связи с ноутом больше нет,
-# а разбудить его некому. Имена бывают неочевидными и лежат вне /Applications
-# (системные расширения, бинари в /usr/local/bin), поэтому проверяй, как
-# процесс реально зовётся:
+# PUT YOUR VPN CLIENT HERE, ALONG WITH ANYTHING YOU REACH THIS MACHINE THROUGH.
+# A frozen VPN behind a closed lid cannot be fixed: you have lost the
+# connection and there is nobody there to wake the machine. Names are often
+# not what you expect and live outside /Applications (system extensions,
+# binaries in /usr/local/bin), so check what the process is actually called:
 #
-#     ps -Ao args | grep -i <имя>
+#     ps -Ao args | grep -i <name>
 #
-# Дальше - только то, без чего оснастка сломает сама себя.
+# Below is only what the rig needs in order not to break itself.
 NEVER_FREEZE="Terminal
 iTerm
 Visual Studio Code
@@ -34,11 +35,12 @@ SystemExtensions
 /System/
 /usr/libexec/"
 
-# Писать в лог список замороженных процессов
+# Log the list of frozen processes
 VERBOSE_LOG=1
 
-# Дополнительно: заморозка по подстроке в полном пути процесса.
-# Нужно для того, что живёт вне /Applications - например, Steam держит и себя,
-# и игры в ~/Library/Application Support/Steam/, а в /Applications только оболочка.
+# Extra: freeze by substring of the process's full path. Needed for things
+# living outside /Applications - Steam, for example, keeps itself and its
+# games under ~/Library/Application Support/Steam/, while /Applications holds
+# only the launcher.
 FREEZE_PATHS="Library/Application Support/Steam
 steamapps/common"

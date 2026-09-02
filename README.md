@@ -177,6 +177,14 @@ macOS (developed on macOS 26, Apple Silicon), `bash`, and admin rights once for
 the `sudoers` rule. Freezing applications uses SIGSTOP, so anything holding a
 network session may need to reconnect after a thaw.
 
+## A note on language
+
+Everything you interact with is English: the runtime output, the phone
+notifications, the installer and both config files. The comments *inside* the
+scripts are Russian - that is where the reasoning lives, and translating it
+would have cost more than it bought. The same reasoning, in English, is in
+[`docs/en/`](docs/en/) and in "The gotchas" above.
+
 ## License
 
 MIT - see [LICENSE](LICENSE).

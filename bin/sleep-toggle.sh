@@ -47,8 +47,8 @@ apply() {
     if sudo -n "$PMSET" -a disablesleep "$(value_for "$want")" 2>/dev/null; then
         return 0
     fi
-    notify "Сон: ошибка" "Нет правила /etc/sudoers.d/pmset-disablesleep"
-    echo "ошибка: нет правила sudoers - поставь через ./install.sh, docs/en/sleep-toggle.md" >&2
+    notify "Sleep: error" "No /etc/sudoers.d/pmset-disablesleep rule"
+    echo "error: no sudoers rule - install it with ./install.sh, see docs/en/sleep-toggle.md" >&2
     return 1
 }
 
@@ -59,7 +59,7 @@ preflight() {
 
     if [ -x "$HOME/bin/backpack-health.sh" ]; then
         if ! health=$("$HOME/bin/backpack-health.sh" 2>&1); then
-            echo "⚠️  оснастка: $(echo "$health" | tail -1)"
+            echo "⚠️  rig: $(echo "$health" | tail -1)"
         fi
     fi
 
@@ -70,26 +70,26 @@ preflight() {
         | sort -t' ' -k2 -rn | head -2 | paste -sd', ' -)
 
     if [ -n "$hogs" ]; then
-        echo "⚠️  жрёт CPU: $hogs"
+        echo "⚠️  burning CPU: $hogs"
     fi
 }
 
 report() {
     local extra
     if [ "$1" = on ]; then
-        notify "Сон запрещён" "Крышку можно закрывать"
-        echo "🔒 СОН ЗАПРЕЩЁН — крышку можно закрывать"
+        notify "Sleep prevented" "You can close the lid"
+        echo "🔒 SLEEP PREVENTED - you can close the lid"
         extra=$(preflight)
         [ -n "$extra" ] && echo "$extra"
-        push_phone "🔒 Режим рюкзака ВКЛЮЧЁН" \
-            "Мак не заснёт с закрытой крышкой.${extra:+ }${extra//$'\n'/ }" lock
+        push_phone "🔒 Backpack mode ON" \
+            "The Mac will not sleep with the lid closed.${extra:+ }${extra//$'\n'/ }" lock
     else
-        notify "Сон разрешён" "Обычный режим"
-        echo "😴 СОН РАЗРЕШЁН — обычный режим"
+        notify "Sleep allowed" "Back to normal"
+        echo "😴 SLEEP ALLOWED - back to normal"
         # Третий независимый путь разморозки, помимо агента и ручной команды.
         [ -x "$HOME/bin/backpack-mode.sh" ] && "$HOME/bin/backpack-mode.sh" thaw >/dev/null 2>&1
-        push_phone "😴 Режим рюкзака ВЫКЛЮЧЕН" \
-            "Мак уснёт как обычно. Процессы разморожены." unlock
+        push_phone "😴 Backpack mode OFF" \
+            "The Mac will sleep as usual. Processes thawed." unlock
     fi
 }
 
@@ -112,7 +112,7 @@ case "${1:-toggle}" in
         fi
         ;;
     *)
-        echo "использование: $(basename "$0") [toggle|on|off|status]" >&2
+        echo "usage: $(basename "$0") [toggle|on|off|status]" >&2
         exit 2
         ;;
 esac

@@ -1,4 +1,4 @@
-# Позволяет __USER__ переключать запрет сна без пароля.
-# Разрешены ровно две команды с фиксированными аргументами, больше ничего.
+# Lets __USER__ toggle sleep prevention without a password.
+# Exactly two commands with fixed arguments are permitted, nothing else.
 __USER__ ALL=(root) NOPASSWD: /usr/bin/pmset -a disablesleep 0
 __USER__ ALL=(root) NOPASSWD: /usr/bin/pmset -a disablesleep 1

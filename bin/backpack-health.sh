@@ -40,57 +40,57 @@ check_agent() {
 
     if [ ! -f "$plist" ]; then
         case " $OPTIONAL_AGENTS " in
-            *" $label "*) say "  •  $label не ставился - необязательный"; return ;;
+            *" $label "*) say "  •  $label not installed - optional"; return ;;
         esac
-        warn "$label: плист отсутствует ($plist)"
+        warn "$label: plist missing ($plist)"
         return
     fi
 
     if agent_loaded "$label"; then
-        ok "$label загружен"
+        ok "$label loaded"
         return
     fi
 
     if launchctl bootstrap "gui/$UID_NUM" "$plist" 2>/dev/null && agent_loaded "$label"; then
-        fix "$label не был загружен - поднял"
+        fix "$label was not loaded - brought it up"
     else
-        warn "$label не загружен и не поднимается"
+        warn "$label not loaded and will not start"
     fi
 }
 
-say "=== АГЕНТЫ ==="
+say "=== AGENTS ==="
 for entry in $AGENTS; do
     check_agent "${entry%%:*}" "${entry#*:}"
 done
 
 say ""
-say "=== ПРАВА И ФАЙЛЫ ==="
+say "=== PERMISSIONS AND FILES ==="
 if [ -f /etc/sudoers.d/pmset-disablesleep ]; then
-    ok "правило sudoers на месте"
+    ok "sudoers rule in place"
 else
-    warn "нет /etc/sudoers.d/pmset-disablesleep - тумблер сна работать не будет"
+    warn "no /etc/sudoers.d/pmset-disablesleep - the sleep toggle will not work"
 fi
 
 # Спрашиваем список разрешённого, а не выполняем команду: единственная
 # разрешённая команда меняет состояние сна, дёргать её ради проверки нельзя.
 if sudo -n -l 2>/dev/null | grep -q 'disablesleep'; then
-    ok "правило подхвачено sudo (без пароля)"
+    ok "rule accepted by sudo (no password)"
 else
-    warn "sudo не видит правило - проверь @includedir в /etc/sudoers"
+    warn "sudo does not see the rule - check @includedir in /etc/sudoers"
 fi
 
 for s in sleep-toggle.sh battery-watch.sh sleep-audit.sh backpack-mode.sh; do
     if [ -x "$HOME/bin/$s" ]; then
-        ok "$s исполняем"
+        ok "$s is executable"
     else
-        warn "$HOME/bin/$s отсутствует или не исполняем"
+        warn "$HOME/bin/$s is missing or not executable"
     fi
 done
 
 if [ -r "$HOME/.config/battery-watch.conf" ]; then
-    ok "конфиг сторожа читается"
+    ok "notification config is readable"
 else
-    warn "нет ~/.config/battery-watch.conf - пуши о заряде не уйдут"
+    warn "no ~/.config/battery-watch.conf - no pushes will be sent"
 fi
 
 say ""
@@ -111,16 +111,16 @@ rc_delta=$((rc_runs - rc_prev))
 rc_uptime=$(ps -p "${rc_pid:-0}" -o etime= 2>/dev/null | tr -d ' ')
 
 if [ -z "$rc_pid" ]; then
-    warn "Remote Control не запущен (запусков всего: $rc_runs)"
+    warn "Remote Control is not running (runs so far: $rc_runs)"
     RC_EVENT="down"
 elif [ "$rc_delta" -ge 2 ]; then
-    warn "Remote Control падает по кругу: $rc_delta перезапусков с прошлой проверки"
+    warn "Remote Control is crash-looping: $rc_delta restarts since the last check"
     RC_EVENT="looping"
 elif [ "$rc_delta" -eq 1 ]; then
-    ok "Remote Control перезапускался один раз (pid $rc_pid, живёт $rc_uptime)"
+    ok "Remote Control restarted once (pid $rc_pid, up $rc_uptime)"
     RC_EVENT="restarted"
 else
-    ok "Remote Control стабилен (pid $rc_pid, живёт $rc_uptime)"
+    ok "Remote Control is stable (pid $rc_pid, up $rc_uptime)"
     RC_EVENT="stable"
 fi
 echo "$rc_runs" > "$RC_RUNS_FILE"
@@ -132,16 +132,16 @@ if [ "$QUIET" -eq 1 ] && [ "$RC_EVENT" != stable ]; then
         . "$RC_CONF"
         case "$RC_EVENT" in
             down)
-                rc_t="📡 Remote Control лежит"
-                rc_b="Не запущен, KeepAlive не поднял. Смотри ~/Library/Logs/claude-rc.log"
+                rc_t="📡 Remote Control is down"
+                rc_b="Not running, KeepAlive did not bring it back. See ~/Library/Logs/claude-rc.log"
                 rc_p=high ;;
             looping)
-                rc_t="📡 Remote Control падает по кругу"
-                rc_b="$rc_delta перезапусков за полчаса. KeepAlive маскирует поломку - нужна причина, лог: ~/Library/Logs/claude-rc.log"
+                rc_t="📡 Remote Control is crash-looping"
+                rc_b="$rc_delta restarts in half an hour. KeepAlive is masking the breakage - find the cause in ~/Library/Logs/claude-rc.log"
                 rc_p=high ;;
             *)
-                rc_t="📡 Remote Control перезапустился"
-                rc_b="Падал один раз, поднялся сам. Живёт $rc_uptime, pid $rc_pid."
+                rc_t="📡 Remote Control restarted"
+                rc_b="Crashed once, came back on its own. Up $rc_uptime, pid $rc_pid."
                 rc_p=default ;;
         esac
         curl -fsS --max-time 15 -H "Title: $rc_t" -H "Priority: $rc_p" \
@@ -151,21 +151,21 @@ if [ "$QUIET" -eq 1 ] && [ "$RC_EVENT" != stable ]; then
 fi
 
 say ""
-say "=== СОСТОЯНИЕ ==="
+say "=== STATE ==="
 if ioreg -r -c IOPMrootDomain -d 1 | grep -q '"SleepDisabled" = Yes'; then
-    say "  🔒 сон запрещён"
+    say "  🔒 sleep prevented"
 else
-    say "  😴 сон разрешён"
+    say "  😴 sleep allowed"
 fi
-say "  🔋 заряд $(pmset -g batt | grep -Eo '[0-9]+%' | head -1)"
+say "  🔋 charge $(pmset -g batt | grep -Eo '[0-9]+%' | head -1)"
 
 say ""
 if [ "$PROBLEMS" -eq 0 ] && [ "$REPAIRED" -eq 0 ]; then
-    say "Всё на месте."
+    say "Everything is in place."
 elif [ "$PROBLEMS" -eq 0 ]; then
-    say "Починено: $REPAIRED. Проблем нет."
+    say "Repaired: $REPAIRED. No problems."
 else
-    say "Проблем: $PROBLEMS, починено: $REPAIRED. Разберись до того, как закрывать крышку."
+    say "Problems: $PROBLEMS, repaired: $REPAIRED. Sort it out before closing the lid."
 fi
 
 # В тихом режиме молчание = всё хорошо. О поломке и о самопочинке сообщаем
@@ -176,10 +176,10 @@ if [ "$QUIET" -eq 1 ] && { [ "$PROBLEMS" -gt 0 ] || [ "$REPAIRED" -gt 0 ]; }; th
         # shellcheck disable=SC1090
         . "$CONF"
         if [ "$PROBLEMS" -gt 0 ]; then
-            h_title="🛠 Оснастка сломана"; h_prio=high
+            h_title="🛠 The rig is broken"; h_prio=high
             h_body="${ISSUES:-}"
         else
-            h_title="🔧 Оснастка починена сама"; h_prio=low
+            h_title="🔧 The rig repaired itself"; h_prio=low
             h_body="${FIXED:-}"
         fi
         curl -fsS --max-time 15 -H "Title: $h_title" -H "Priority: $h_prio" \

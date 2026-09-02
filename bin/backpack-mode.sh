@@ -18,7 +18,7 @@ STATE="$HOME/.local/state/backpack-frozen.pids"
 MODE_STATE="$HOME/.local/state/backpack-mode.state"
 LOG_TAG="backpack-mode"
 
-[ -r "$CONF" ] || { echo "нет конфига $CONF" >&2; exit 1; }
+[ -r "$CONF" ] || { echo "no config at $CONF" >&2; exit 1; }
 # shellcheck disable=SC1090
 . "$CONF"
 
@@ -183,14 +183,14 @@ announce() {
 
     echo "$now" > "$MODE_STATE"
     if [ "$now" = active ]; then
-        log "режим рюкзака ВКЛЮЧИЛСЯ: заморожено $(frozen_count), панель погашена"
-        push_phone "🎒 Режим рюкзака активирован" \
-            "Заморожено процессов: $(frozen_count). Панель погашена, система работает." \
+        log "backpack mode ENGAGED: froze $(frozen_count), panel powered down"
+        push_phone "🎒 Backpack mode engaged" \
+            "Processes frozen: $(frozen_count). Panel is down, the system keeps working." \
             "package"
     else
-        log "режим рюкзака ВЫКЛЮЧИЛСЯ: процессы разморожены"
-        push_phone "🎒 Режим рюкзака снят" \
-            "Процессы разморожены, экран вернулся." "package"
+        log "backpack mode LIFTED: processes thawed"
+        push_phone "🎒 Backpack mode lifted" \
+            "Processes thawed, the screen is back." "package"
     fi
 }
 
@@ -214,20 +214,20 @@ case "${1:-apply}" in
         ;;
     freeze)
         freeze
-        echo "заморожено: $(frozen_count)"
+        echo "frozen: $(frozen_count)"
         ;;
     thaw|resume)
         n=$(frozen_count)
         thaw
-        echo "разморожено: $n"
+        echo "thawed: $n"
         ;;
     status)
-        echo "запрет сна:  $(sleep_disabled && echo 'включён' || echo 'выключен')"
-        echo "крышка:      $(lid_closed && echo 'закрыта' || echo 'открыта')"
-        echo "заморожено:  $(frozen_count) процессов"
-        echo "подсветка:   $(backlight_level) (0 = обесточена)"
+        echo "sleep prevention: $(sleep_disabled && echo 'on' || echo 'off')"
+        echo "lid:              $(lid_closed && echo 'closed' || echo 'open')"
+        echo "frozen:           $(frozen_count) processes"
+        echo "backlight:        $(backlight_level) (0 = powered down)"
         if [ -s "$STATE" ]; then
-            echo "кто именно:"
+            echo "which ones:"
             while IFS= read -r pid; do
                 [ -z "$pid" ] && continue
                 ps -p "$pid" -o comm= 2>/dev/null \
@@ -236,14 +236,14 @@ case "${1:-apply}" in
         fi
         ;;
     targets)
-        echo "кандидаты на заморозку прямо сейчас:"
+        echo "freeze candidates right now:"
         target_pids | sort -un | while IFS= read -r pid; do
             ps -p "$pid" -o comm= 2>/dev/null \
                 | pretty_name
         done | sort | uniq -c | sort -rn | sed 's/^/  /'
         ;;
     *)
-        echo "использование: $(basename "$0") [apply|freeze|thaw|status|targets]" >&2
+        echo "usage: $(basename "$0") [apply|freeze|thaw|status|targets]" >&2
         exit 2
         ;;
 esac

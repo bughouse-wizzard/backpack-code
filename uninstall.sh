@@ -11,25 +11,25 @@ PURGE=0
 say() { printf "%s\n" "$1"; }
 
 [ -x "$HOME/bin/backpack-mode.sh" ] && "$HOME/bin/backpack-mode.sh" thaw >/dev/null 2>&1 \
-    && say "✅ процессы разморожены"
+    && say "✅ processes thawed"
 [ -x "$HOME/bin/sleep-toggle.sh" ] && "$HOME/bin/sleep-toggle.sh" off >/dev/null 2>&1 \
-    && say "✅ сон разрешён обратно"
+    && say "✅ sleep allowed again"
 
 for a in battery-watch backpack-mode backpack-health claude-rc night-log; do
     label="com.backpack.$a"
-    launchctl bootout "gui/$UID_NUM/$label" 2>/dev/null && say "✅ выгружен $label"
+    launchctl bootout "gui/$UID_NUM/$label" 2>/dev/null && say "✅ unloaded $label"
     rm -f "$HOME/Library/LaunchAgents/$label.plist"
 done
 
 rm -f "$HOME"/bin/{sleep-toggle,backpack-mode,backpack-health,battery-watch,sleep-audit,night-log}.sh
-say "✅ скрипты из ~/bin удалены"
+say "✅ scripts removed from ~/bin"
 
 if [ "$PURGE" -eq 1 ]; then
     rm -f "$HOME/.config/backpack-mode.conf" "$HOME/.config/battery-watch.conf"
     rm -f "$HOME/.local/state/backpack-frozen.pids" "$HOME/.local/state/backpack-mode.state" \
           "$HOME/.local/state/battery-watch.state" "$HOME/.local/state/claude-rc.runs"
     sudo rm -f /etc/sudoers.d/pmset-disablesleep
-    say "✅ конфиги, состояние и правило sudoers удалены"
+    say "✅ configs, state and the sudoers rule removed"
 else
-    say "•  конфиги и правило sudoers оставлены, снести всё: ./uninstall.sh --purge"
+    say "•  configs and the sudoers rule kept, remove everything: ./uninstall.sh --purge"
 fi

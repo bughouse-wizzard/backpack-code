@@ -9,7 +9,7 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 CONF="$HOME/.config/battery-watch.conf"
 STATE="$HOME/.local/state/battery-watch.state"
 
-[ -r "$CONF" ] || { echo "нет конфига $CONF" >&2; exit 1; }
+[ -r "$CONF" ] || { echo "no config at $CONF" >&2; exit 1; }
 # shellcheck disable=SC1090
 . "$CONF"
 
@@ -79,29 +79,29 @@ notify_threshold() {
     # Громкость растёт по мере разряда: верхние ступени информационные и
     # молчат, нижние будят. Иначе десяток уведомлений за цикл - это шум.
     if [ "$crossed" -le 5 ]; then
-        title="🪫 Батарея ${pct}% — вот-вот выключится"; prio=urgent;  tags="rotating_light"
+        title="🪫 Battery ${pct}% - about to cut out"; prio=urgent;  tags="rotating_light"
     elif [ "$crossed" -le 10 ]; then
-        title="🪫 Батарея ${pct}%";                      prio=high;    tags="warning"
+        title="🪫 Battery ${pct}%";                      prio=high;    tags="warning"
     elif [ "$crossed" -le 20 ]; then
-        title="🔋 Батарея ${pct}%";                      prio=default; tags="battery"
+        title="🔋 Battery ${pct}%";                      prio=default; tags="battery"
     elif [ "$crossed" -le 50 ]; then
-        title="🔋 Батарея ${pct}%";                      prio=low;     tags="battery"
+        title="🔋 Battery ${pct}%";                      prio=low;     tags="battery"
     else
-        title="🔋 Батарея ${pct}%";                      prio=min;     tags="battery"
+        title="🔋 Battery ${pct}%";                      prio=min;     tags="battery"
     fi
 
     if [ "$left" = "?" ]; then
-        body="Оценка времени пока недоступна."
+        body="No time estimate available yet."
     else
-        body="Осталось примерно $left."
+        body="About $left remaining."
     fi
 
     # Приписку про резкое выключение добавляем, только если сон действительно
     # запрещён - иначе она врёт.
     if ioreg -r -c IOPMrootDomain -d 1 | grep -q '"SleepDisabled" = Yes'; then
-        body="$body Сон запрещён - мак не заснёт сам, выключится резко."
+        body="$body Sleep is prevented - it will not doze off, it will cut out."
     else
-        body="$body Сон разрешён - уснёт штатно."
+        body="$body Sleep is allowed - it will doze off normally."
     fi
 
     push "$title" "$body" "$prio" "$tags"
@@ -123,11 +123,11 @@ read_state() {
 
 case "${1:-}" in
     test)
-        if push "🔋 Проверка связи" "Сторож заряда настроен. Если видишь это на телефоне - всё работает." low battery; then
-            log "тестовый пуш отправлен ($BACKEND)"
+        if push "🔋 Test push" "Battery watch is configured. If you see this on your phone, it works." low battery; then
+            log "test push sent ($BACKEND)"
             exit 0
         fi
-        log "ОШИБКА: тестовый пуш не ушёл"
+        log "ERROR: test push did not go through"
         exit 1
         ;;
     demo)
@@ -136,18 +136,18 @@ case "${1:-}" in
         d_thr="${2:-20}"
         d_pct="${3:-$d_thr}"
         if notify_threshold "$d_thr" "$d_pct" "1:47"; then
-            log "demo: отправлено уведомление уровня ${d_thr}% (показан заряд ${d_pct}%)"
+            log "demo: sent a ${d_thr}% alert (showing ${d_pct}% charge)"
             exit 0
         fi
-        log "demo: ОШИБКА отправки"
+        log "demo: SEND ERROR"
         exit 1
         ;;
     status)
-        echo "заряд:    $(battery_percent)%"
-        echo "питание:  $([ "$(on_ac)" = yes ] && echo 'сеть' || echo 'батарея')"
-        echo "остаток:  $(time_left)"
-        echo "бэкенд:   $BACKEND"
-        echo "состояние: $(read_state)"
+        echo "charge:  $(battery_percent)%"
+        echo "power:   $([ "$(on_ac)" = yes ] && echo 'AC' || echo 'battery')"
+        echo "left:    $(time_left)"
+        echo "backend: $BACKEND"
+        echo "state:   $(read_state)"
         exit 0
         ;;
 esac
@@ -158,7 +158,7 @@ pct=$(battery_percent)
 ac=$(on_ac)
 
 if [ -z "$pct" ]; then
-    log "не удалось прочитать заряд"
+    log "could not read the charge"
     exit 0
 fi
 
@@ -168,7 +168,7 @@ if [ "$ac" = yes ]; then
     # На зарядке молчим и сбрасываем пороги, чтобы при следующем разряде
     # оповещения сработали заново.
     if [ "$last_ac" != yes ]; then
-        log "подключено питание, пороги сброшены (${pct}%)"
+        log "AC connected, thresholds reset (${pct}%)"
     fi
     echo "100 yes" > "$STATE"
     exit 0
@@ -193,9 +193,9 @@ left=$(time_left)
 
 if notify_threshold "$crossed" "$pct" "$left"; then
     echo "$crossed no" > "$STATE"
-    log "отправлено: порог $crossed (${pct}%, осталось $left)"
+    log "sent: threshold $crossed (${pct}%, $left left)"
 else
     # Не записываем порог как отправленный - повторим на следующем запуске.
     echo "$last_notified no" > "$STATE"
-    log "ОШИБКА отправки на ${pct}%, повторю позже"
+    log "SEND ERROR at ${pct}%, will retry"
 fi
