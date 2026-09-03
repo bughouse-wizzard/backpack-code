@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>backpack-code - run your Mac from your phone, lid closed</title>
+<meta name="description" content="launchd agents that keep a MacBook awake, quiet and reachable while it stays shut in a bag.">
+<style>
+:root{
+  --bg:#fbfaf8; --surface:#ffffff; --surface-2:#f4f2ee; --line:#e4e0d8;
+  --ink:#1c1b19; --ink-2:#4a4741; --ink-3:#78736a;
+  --accent:#8a5a2b; --accent-ink:#6d4520; --good:#3f6b3a; --code-bg:#f4f2ee;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131311; --surface:#1b1b18; --surface-2:#222220; --line:#32312d;
+    --ink:#f0eee9; --ink-2:#c3bfb6; --ink-3:#918c82;
+    --accent:#d9a066; --accent-ink:#e8bd8c; --good:#8fbe86; --code-bg:#111110;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:16px/1.65 ui-sans-serif,-apple-system,"SF Pro Text",Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  overflow-x:hidden;
+}
+.wrap{max-width:920px; margin:0 auto; padding:0 24px}
+a{color:var(--accent-ink); text-underline-offset:3px}
+h1,h2,h3{line-height:1.2; letter-spacing:-0.015em; margin:0}
+code,pre{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+code{font-size:0.88em; background:var(--code-bg); border:1px solid var(--line);
+  border-radius:5px; padding:0.1em 0.35em}
+pre{background:var(--code-bg); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-size:14px; line-height:1.6; margin:0}
+pre code{background:none; border:0; padding:0; font-size:inherit}
+
+/* header */
+header{border-bottom:1px solid var(--line); background:var(--surface)}
+.bar{display:flex; align-items:center; gap:16px; padding:14px 0; flex-wrap:wrap}
+.mark{font-weight:650; letter-spacing:-0.02em}
+.mark span{color:var(--ink-3); font-weight:450}
+nav{margin-left:auto; display:flex; gap:18px; font-size:14px}
+nav a{color:var(--ink-2); text-decoration:none}
+nav a:hover{color:var(--accent-ink); text-decoration:underline}
+
+/* hero */
+.hero{padding:64px 0 40px}
+.hero h1{font-size:clamp(32px,5.5vw,50px); font-weight:660}
+.tagline{color:var(--ink-2); font-size:clamp(17px,2.2vw,20px); margin:18px 0 0; max-width:34em}
+.lede{color:var(--ink-3); margin:20px 0 0; max-width:36em}
+.cta{display:flex; gap:12px; margin-top:30px; flex-wrap:wrap}
+.btn{display:inline-block; padding:10px 18px; border-radius:8px; text-decoration:none;
+  font-size:15px; font-weight:550; border:1px solid var(--line)}
+.btn-primary{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.btn-ghost{background:var(--surface); color:var(--ink-2)}
+
+/* stats */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line);
+  border-radius:var(--radius); overflow:hidden; margin:44px 0 8px}
+.tile{background:var(--surface); padding:20px 18px}
+.tile .label{font-size:12.5px; color:var(--ink-3); text-transform:none; margin:0 0 8px}
+.tile .value{font-size:26px; font-weight:620; letter-spacing:-0.02em; margin:0}
+.tile .note{font-size:12.5px; color:var(--ink-3); margin:6px 0 0}
+.tile.hero-tile .value{font-size:44px; color:var(--accent-ink)}
+.measured{font-size:13px; color:var(--ink-3); margin:14px 0 0}
+
+section{padding:52px 0; border-top:1px solid var(--line)}
+section h2{font-size:26px; font-weight:640}
+section > p:first-of-type{color:var(--ink-2)}
+.sub{color:var(--ink-2); margin:12px 0 0; max-width:40em}
+
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; margin-top:28px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px}
+.card h3{font-size:15px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600; color:var(--accent-ink)}
+.card p{margin:10px 0 0; font-size:14.5px; color:var(--ink-2)}
+
+.gotchas{margin-top:26px; display:grid; gap:18px}
+.gotcha{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:var(--radius); padding:18px 20px}
+.gotcha b{display:block; margin-bottom:7px}
+.gotcha p{margin:0; color:var(--ink-2); font-size:15px}
+
+.snippet{position:relative; margin-top:22px}
+.copy{position:absolute; top:10px; right:10px; font:500 12px/1 ui-sans-serif,system-ui,sans-serif;
+  background:var(--surface); color:var(--ink-2); border:1px solid var(--line);
+  border-radius:6px; padding:7px 10px; cursor:pointer}
+.copy:hover{color:var(--ink)}
+.copy.done{color:var(--good); border-color:var(--good)}
+
+.warn{margin-top:20px; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:var(--radius); padding:16px 18px; font-size:15px; color:var(--ink-2)}
+.warn b{color:var(--ink)}
+
+table{width:100%; border-collapse:collapse; margin-top:22px; font-size:14.5px; display:block; overflow-x:auto}
+th,td{text-align:left; padding:10px 14px 10px 0; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-size:12.5px; color:var(--ink-3); font-weight:550}
+td:first-child{white-space:nowrap; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13.5px}
+
+footer{border-top:1px solid var(--line); padding:32px 0 56px; color:var(--ink-3); font-size:14px}
+footer a{color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="mark">backpack-code <span>· macOS</span></div>
+    <nav>
+      <a href="#what">What it does</a>
+      <a href="#install">Install</a>
+      <a href="#gotchas">Gotchas</a>
+      <a href="https://github.com/bughouse-wizzard/backpack-code">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Your Mac keeps working<br>while it's shut in a bag.</h1>
+    <p class="tagline">Five <code>launchd</code> agents that stop the lid from meaning "sleep" -
+      so the machine stays awake, quiet, cool and reachable from your phone.</p>
+    <p class="lede">macOS assumes a closed lid is a sleeping machine. Wanting the opposite means
+      fighting a handful of details that are not in any manual. This is the result of that fight:
+      six shell scripts, no dependencies beyond what ships with macOS.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#install">Install it</a>
+      <a class="btn btn-ghost" href="https://github.com/bughouse-wizzard/backpack-code">Source on GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="tile hero-tile">
+        <p class="label">Awake in a bag, from a full charge</p>
+        <p class="value">35 h</p>
+        <p class="note">extrapolated from the measured drain</p>
+      </div>
+      <div class="tile">
+        <p class="label">Overnight drain</p>
+        <p class="value">2.89 %/h</p>
+        <p class="note">93% → 69% across 8.3 hours</p>
+      </div>
+      <div class="tile">
+        <p class="label">CPU once frozen</p>
+        <p class="value">149% → 6%</p>
+        <p class="note">the targeted apps, SIGSTOPped</p>
+      </div>
+      <div class="tile">
+        <p class="label">Sleep events</p>
+        <p class="value">0</p>
+        <p class="note">across 100 samples</p>
+      </div>
+    </div>
+    <p class="measured">Measured on one overnight run, Apple Silicon, macOS 26. Your mileage depends on what you leave running.</p>
+  </div>
+
+  <section id="what">
+    <h2>What it does</h2>
+    <p class="sub">Each piece is a small script plus a <code>launchd</code> agent. They watch each
+      other, so both have to die at once for the rig to stay down.</p>
+    <div class="cards">
+      <div class="card"><h3>sleep-toggle.sh</h3>
+        <p>Arms and releases sleep prevention. Bind it to a hotkey - the point is one keystroke
+           before the laptop goes in the bag.</p></div>
+      <div class="card"><h3>backpack-mode.sh</h3>
+        <p>Every 30s: if the lid is closed <em>and</em> sleep is disabled, SIGSTOPs the heavy apps
+           and turns the panel off. Nothing is killed; SIGCONT resumes it exactly where it was.</p></div>
+      <div class="card"><h3>battery-watch.sh</h3>
+        <p>Pushes battery warnings to your phone at 30/20/10/5% over ntfy or Telegram, getting
+           louder as the charge falls.</p></div>
+      <div class="card"><h3>backpack-health.sh</h3>
+        <p>Every 30 min: checks the other agents, restarts the dead ones, and tells you on the
+           phone what broke and whether it healed.</p></div>
+      <div class="card"><h3>sleep-audit.sh</h3>
+        <p>Answers the only question that matters after a bad night: did it sleep, and what was
+           holding it awake?</p></div>
+      <div class="card"><h3>claude-rc <span style="color:var(--ink-3)">(optional)</span></h3>
+        <p>Keeps Claude Code's remote control alive under <code>launchd</code> - the reason this
+           rig exists: driving a coding agent from the phone with the laptop shut.</p></div>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2>Install</h2>
+    <p class="sub">The installer renders the agent plists for your user, generates a private
+      notification topic, installs a narrow <code>sudoers</code> rule so the sleep toggle needs no
+      password, and loads everything. Re-running it is safe.</p>
+    <div class="snippet">
+      <button class="copy" type="button">Copy</button>
+<pre><code>git clone https://github.com/bughouse-wizzard/backpack-code
+cd backpack-code
+./install.sh</code></pre>
+    </div>
+    <div class="warn">
+      <b>Then add your VPN client to <code>NEVER_FREEZE</code></b> in
+      <code>~/.config/backpack-mode.conf</code>. A frozen VPN behind a closed lid cannot be fixed:
+      you have lost the connection to the machine and nobody is there to wake it.
+    </div>
+    <p class="sub">Removal thaws anything still frozen and restores normal sleep first:
+      <code>./uninstall.sh</code>.</p>
+  </section>
+
+  <section id="notifications">
+    <h2>It tells you what it's doing</h2>
+    <p class="sub">Four of the scripts push to your phone through
+      <a href="https://ntfy.sh">ntfy</a> (or Telegram). The topic name is the entire secret, so
+      the installer generates a long random one and keeps the config at mode 600.</p>
+    <table>
+      <thead><tr><th>Sent by</th><th>Event</th></tr></thead>
+      <tbody>
+        <tr><td>battery-watch</td><td>Charge crossed 90 / 80 / … / 10 / 5%</td></tr>
+        <tr><td>sleep-toggle</td><td>Sleep prevention armed or released</td></tr>
+        <tr><td>backpack-mode</td><td>Backpack mode engaged or lifted</td></tr>
+        <tr><td>backpack-health</td><td>An agent died - and whether it was revived</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="gotchas">
+    <h2>The gotchas</h2>
+    <p class="sub">The scripts are short. The knowledge in them is not - this is the part that
+      cost the time.</p>
+    <div class="gotchas">
+      <div class="gotcha">
+        <b>Clamshell detection is only <code>AppleClamshellState</code> from <code>ioreg</code>.</b>
+        <p>The powerd assertion <code>Prevent sleep while display is on</code> is not released in
+        clamshell mode and stays up for hours, reporting a display that is on - observed for 54
+        minutes. Anything keyed on it never fires.</p>
+      </div>
+      <div class="gotcha">
+        <b><code>disablesleep</code> also disables display sleep.</b>
+        <p>Behind a closed lid the panel quietly lights an empty room. Kill it with
+        <code>pmset displaysleepnow</code>, not by setting brightness to zero - that only dims.</p>
+      </div>
+      <div class="gotcha">
+        <b>Process lists must be blacklists, never whitelists.</b>
+        <p>A "freeze everything except what I need" rule will eventually freeze your VPN. Clients
+        rarely look like VPNs by name, some live outside <code>/Applications</code>, some are
+        system extensions. With the lid closed, that mistake is unrecoverable.</p>
+      </div>
+      <div class="gotcha">
+        <b><code>launchd</code> gives a process 256 file descriptors. A shell gives a million.</b>
+        <p>Moving a long-running process from a terminal to <code>launchd</code> can drop it into a
+        crash loop with <code>low max file descriptors</code>. Fix with
+        <code>SoftResourceLimits/NumberOfFiles</code>. Check this when moving <em>any</em> process
+        under <code>launchd</code>.</p>
+      </div>
+      <div class="gotcha">
+        <b><code>KeepAlive</code> masks breakage.</b>
+        <p>A crash loop looks healthy to every "is the process running" check - there is always a
+        process, just a new one each time. Watch the <code>runs</code> counter from
+        <code>launchctl print</code>, or uptime. That is how 11 identical crashes in one night were
+        found.</p>
+      </div>
+      <div class="gotcha">
+        <b>Write state files atomically.</b>
+        <p>Temp file plus <code>mv</code>, never truncate-and-append: a reader will catch the file
+        half-written. The night logger once recorded 33 frozen processes where there were 77.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="docs">
+    <h2>Documentation</h2>
+    <p class="sub">Every script has a deep dive in English, with a Russian twin next to it.
+      Everything you interact with is English - runtime output, phone notifications, the installer
+      and both config files. The comments <em>inside</em> the scripts stayed Russian; the same
+      reasoning in English is above and in the docs.</p>
+    <div class="cards">
+      <div class="card"><h3>sleep-toggle</h3>
+        <p>The sleep switch, the narrow sudoers rule, and binding the hotkey through Shortcuts.<br>
+        <a href="https://github.com/bughouse-wizzard/backpack-code/blob/main/docs/en/sleep-toggle.md">English</a> · <a href="https://github.com/bughouse-wizzard/backpack-code/blob/main/docs/ru/sleep-toggle.md">Русский</a></p></div>
+      <div class="card"><h3>backpack-mode</h3>
+        <p>Freezing apps, clamshell detection, turning the panel off, and why the list is a
+        blacklist.<br>
+        <a href="https://github.com/bughouse-wizzard/backpack-code/blob/main/docs/en/backpack-mode.md">English</a> · <a href="https://github.com/bughouse-wizzard/backpack-code/blob/main/docs/ru/backpack-mode.md">Русский</a></p></div>
+      <div class="card"><h3>battery-watch</h3>
+        <p>Notifications end to end: subscribing, thresholds and loudness, ntfy or Telegram.<br>
+        <a href="https://github.com/bughouse-wizzard/backpack-code/blob/main/docs/en/battery-watch.md">English</a> · <a href="https://github.com/bughouse-wizzard/backpack-code/blob/main/docs/ru/battery-watch.md">Русский</a></p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    MIT licensed · built for one laptop that refused to stay awake ·
+    <a href="https://github.com/bughouse-wizzard/backpack-code">github.com/bughouse-wizzard/backpack-code</a>
+  </div>
+</footer>
+
+<script>
+document.querySelector('.copy')?.addEventListener('click', function(){
+  var text = document.querySelector('.snippet pre').innerText;
+  navigator.clipboard.writeText(text).then(function(){
+    var b = document.querySelector('.copy');
+    b.textContent = 'Copied'; b.classList.add('done');
+    setTimeout(function(){ b.textContent = 'Copy'; b.classList.remove('done'); }, 1600);
+  });
+});
+</script>
+</body>
+</html>
